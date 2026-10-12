@@ -1,0 +1,61 @@
+appId: church.simpleworship.app
+productName: SimpleWorship
+copyright: Copyright © 2026 SimpleWorship contributors
+
+directories:
+  output: release
+
+files:
+  - out/**/*
+  # sql.js ships debug, browser, asm.js, worker, and prebuilt archive variants.
+  # The app uses only the default wasm loader and its matching WebAssembly.
+  - "!node_modules/sql.js/.devcontainer{,/**/*}"
+  - "!node_modules/sql.js/{.eslintrc.js,.jsdoc.config.json,.nojekyll,AUTHORS,CONTRIBUTING.md,README.md,documentation_index.md,eslint.config.cjs,logo.svg}"
+  - "!node_modules/sql.js/dist/{sql-asm*,sql-wasm-browser*,sql-wasm-debug*,sqljs-*.zip,worker.*}"
+
+# Release commands must never quietly emit unsigned desktop installers.
+forceCodeSigning: true
+
+extraResources:
+  - from: logo.png
+    to: logo.png
+
+win:
+  # Windows executables and NSIS require a real multi-resolution ICO.
+  # build/logo.ico is generated from the source artwork in logo.png.
+  icon: build/logo.ico
+  target:
+    - target: nsis
+      arch: [x64]
+
+mac:
+  icon: logo.png
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  category: public.app-category.utilities
+  notarize: true
+
+linux:
+  icon: logo.png
+  target:
+    - target: AppImage
+      arch: [x64]
+  category: AudioVideo
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  installerIcon: build/logo.ico
+  uninstallerIcon: build/logo.ico
+  installerHeaderIcon: build/logo.ico
+  # Explicit (matches electron-builder's default) — the installer/uninstaller
+  # must never touch %APPDATA%\SimpleWorship, since that's where the
+  # database, settings, and media library references live. Upgrading by
+  # running a new installer over an old install already preserves this
+  # folder untouched; this just guards against that ever changing silently.
+  deleteAppDataOnUninstall: false
+
+publish: null

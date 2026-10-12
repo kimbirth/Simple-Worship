@@ -1,0 +1,70 @@
+# Rename this file to signpath-release.yml only after SignPath has approved the
+# project and the repository variables/secrets below are configured.
+name: Sign Windows release with SignPath
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  sign:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.18.0
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Build unsigned signing input
+        run: npm run build:win:unsigned
+
+      - name: Upload unsigned artifact
+        id: upload-unsigned-artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: simpleworship-windows-unsigned
+          path: release/*.exe
+          if-no-files-found: error
+
+      - name: Submit SignPath signing request
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.upload-unsigned-artifact.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: release/signed
+
+      - name: Verify Authenticode signature
+        shell: powershell
+        run: |
+          $files = Get-ChildItem -Recurse -File release/signed -Filter *.exe
+          if (-not $files) { throw 'SignPath returned no executable.' }
+          foreach ($file in $files) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
+            if ($signature.Status -ne 'Valid') {
+              throw "Invalid signature on $($file.Name): $($signature.Status)"
+            }
+          }
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: simpleworship-windows-signed
+          path: release/signed/**/*.exe
+          if-no-files-found: error
+          retention-days: 14

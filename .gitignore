@@ -1,0 +1,32 @@
+# Dependencies and generated build output
+node_modules/
+out/
+release/
+*.tsbuildinfo
+
+# Test and tool output
+coverage/
+*.log
+npm-debug.log*
+
+# Local settings and signing material
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.cer
+*.crt
+*.key
+*.pem
+
+# Bible text packages are user-supplied and may be copyrighted
+bible.db
+*.swbible
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini

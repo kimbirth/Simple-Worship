@@ -1,0 +1,58 @@
+{
+  "name": "simpleworship",
+  "version": "1.2.6",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": "SimpleWorship Church Team",
+  "description": "Open-source live worship presentation software for churches",
+  "homepage": "https://github.com/kimbirth/Simple-Worship#readme",
+  "bugs": {
+    "url": "https://github.com/kimbirth/Simple-Worship/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kimbirth/Simple-Worship.git"
+  },
+  "main": "out/main/main.js",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "postinstall": "node scripts/electron-install.cjs --optional",
+    "electron:install": "node scripts/electron-install.cjs --required",
+    "dev": "electron-vite dev",
+    "lint": "node scripts/lint-project.cjs",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test",
+    "bible:convert": "node scripts/convert-bible.cjs",
+    "verify": "npm run lint && npm run typecheck && npm test",
+    "check": "npm run verify && npm run build",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "audit:all": "npm audit --audit-level=high",
+    "release:check": "npm run check && npm run audit:all",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "prebuild:win": "node scripts/require-signing.cjs win",
+    "build:win": "npm run release:check && electron-builder --win",
+    "build:win:unsigned": "npm run verify && npm run build && electron-builder --win --config.forceCodeSigning=false",
+    "build:mac": "npm run release:check && electron-builder --mac",
+    "build:linux": "npm run release:check && electron-builder --linux"
+  },
+  "dependencies": {
+    "sql.js": "^1.14.2"
+  },
+  "devDependencies": {
+    "@electron-toolkit/tsconfig": "2.0.0",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "^18.3.0",
+    "@types/sql.js": "1.4.11",
+    "@vitejs/plugin-react": "5.2.0",
+    "electron": "44.5.0",
+    "electron-builder": "26.15.3",
+    "electron-vite": "5.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.5.2",
+    "vite": "7.3.6"
+  }
+}

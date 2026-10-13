@@ -118,7 +118,9 @@ translation is installed, the Bible tab shows a version selector and remembers
 the selected translation across restarts.
 
 Maintainers who have a compatible, lawfully obtained SQLite Bible database can
-create a package without modifying the source database:
+create a package without modifying the source database. On Windows, drag the
+`.db` file onto `CONVERT-BIBLE.bat`, double-click that file for a guided prompt,
+or run:
 
 ```bash
 npm run bible:convert -- input.db Output.swbible
@@ -126,8 +128,11 @@ npm run bible:convert -- input.db Output.swbible
 
 The converter verifies the schema, records, internal package identifier, and
 completed output. It refuses to overwrite an existing package unless `--force`
-is supplied. Bible database and `.swbible` files are intentionally excluded
-from source control.
+is supplied. It packages the existing SimpleWorship SQLite schema; it is not a
+general converter for arbitrary Bible database formats. Exact Windows steps,
+required columns, import instructions, and troubleshooting are in
+[`docs/BIBLE_PACKAGES.md`](docs/BIBLE_PACKAGES.md). Bible database and
+`.swbible` files are intentionally excluded from source control.
 
 ### Optional licensed distribution
 

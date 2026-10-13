@@ -32,9 +32,14 @@ Complete this checklist on the church Windows computer before replacing the serv
 
 ## Bible package
 
-- Launch without a Bible package and confirm the Bible tab offers **Install .swbible package** without affecting the rest of the app.
-- Install a valid, lawfully obtained `.swbible` package and confirm its version, books, chapters, verse order, and text.
-- Restart SimpleWorship and confirm the installed package remains available from the per-user app-data folder.
+- Launch with an empty per-user Bible library and confirm the required import dialog cannot be bypassed by clicking the backdrop or pressing Escape.
+- Cancel the file picker and confirm the required dialog remains. Try an invalid file and confirm a clear error is shown.
+- Import a valid, lawfully obtained RTPV05 package and confirm its books, chapters, verse order, and text.
+- From the Bible tab, import a second package such as an authorized NIV copy; confirm both remain installed and a version selector appears.
+- Switch between RTPV05 and NIV at the same reference and confirm the books, text, citation, and selected state all belong to the chosen version.
+- Restart SimpleWorship and confirm both packages remain available and the last selected translation is restored.
+- Re-import one identical package and confirm it is not duplicated or allowed to overwrite the other package.
+- For an authorized private distribution build, confirm every local `distribution-bibles/*.swbible` file appears as an explicit first-run import choice rather than being activated silently.
 - Confirm the source repository and official installer contain no `bible.db`, `.swbible`, or other copyrighted Bible text.
 
 ## Save and recovery

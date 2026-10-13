@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../../store/AppStore'
 import { BibleAPI } from '../../utils/api'
 import { buildReference, buildVerseParts, parseVerseReference } from '../../utils/verseFormat'
-import type { BibleBook, BibleVerseRow, VerseCue } from '../../types'
+import type { BibleBook, BibleLibraryState, BibleVerseRow, VerseCue } from '../../types'
 
 type Step = 'books' | 'chapters' | 'verses'
 
@@ -10,8 +10,12 @@ export default function BibleTab() {
   const { addToSchedule, selectCue } = useStore()
 
   const [books, setBooks] = useState<BibleBook[]>([])
-  const [versions, setVersions] = useState<string[]>([])
-  const [version, setVersion] = useState('')
+  const [library, setLibrary] = useState<BibleLibraryState>({
+    translations: [],
+    activeTranslationId: null,
+    bundledCandidates: [],
+    requiresImport: true,
+  })
 
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null)
   const [chapter, setChapter] = useState<number | null>(null)
@@ -25,23 +29,50 @@ export default function BibleTab() {
   const [installingPackage, setInstallingPackage] = useState(false)
   const [packageNotice, setPackageNotice] = useState('')
   const [packageError, setPackageError] = useState('')
+  const [switchingTranslation, setSwitchingTranslation] = useState(false)
+  const libraryRequest = useRef(0)
+  const verseRequest = useRef(0)
 
-  const versionRef = useRef(version)
-  versionRef.current = version
+  const activeTranslation = useMemo(
+    () => library.translations.find(item => item.id === library.activeTranslationId) ?? null,
+    [library]
+  )
+  const version = activeTranslation?.version ?? ''
 
   const step: Step = !selectedBook ? 'books' : !chapter ? 'chapters' : 'verses'
 
-  const loadLibrary = useCallback(async () => {
-    const [nextBooks, nextVersions] = await Promise.all([
-      BibleAPI.getBooks(),
-      BibleAPI.getVersions(),
-    ])
-    setBooks(nextBooks)
-    setVersions(nextVersions)
-    setVersion((current) => nextVersions.includes(current) ? current : nextVersions[0] || '')
+  const resetNavigation = useCallback(() => {
+    ++verseRequest.current
+    setSelectedBook(null)
+    setChapter(null)
+    setVerses([])
+    setSelectedIds(new Set())
+    setLoadingVerses(false)
   }, [])
 
-  useEffect(() => { void loadLibrary() }, [loadLibrary])
+  const loadLibrary = useCallback(async (reset = false) => {
+    const request = ++libraryRequest.current
+    try {
+      const nextLibrary = await BibleAPI.getLibrary()
+      const nextBooks = nextLibrary.activeTranslationId ? await BibleAPI.getBooks() : []
+      if (request !== libraryRequest.current) return
+      setLibrary(nextLibrary)
+      setBooks(nextBooks)
+      if (reset) resetNavigation()
+    } catch {
+      if (request !== libraryRequest.current) return
+      setBooks([])
+      setPackageError('The Bible library could not be loaded.')
+      if (reset) resetNavigation()
+    }
+  }, [resetNavigation])
+
+  useEffect(() => {
+    void loadLibrary()
+    const handleLibraryChange = () => { void loadLibrary(true) }
+    window.addEventListener('simpleworship:bible-changed', handleLibraryChange)
+    return () => window.removeEventListener('simpleworship:bible-changed', handleLibraryChange)
+  }, [loadLibrary])
 
   const handleInstallPackage = async () => {
     setInstallingPackage(true)
@@ -54,11 +85,7 @@ export default function BibleTab() {
         setPackageError(result.error || 'The Bible package could not be installed.')
         return
       }
-      await loadLibrary()
-      setSelectedBook(null)
-      setChapter(null)
-      setVerses([])
-      setSelectedIds(new Set())
+      await loadLibrary(true)
       setPackageNotice(`Installed ${result.name || 'Bible package'}.`)
     } catch {
       setPackageError('The Bible package could not be installed.')
@@ -72,25 +99,47 @@ export default function BibleTab() {
    *  function rather than a state-watching effect so search can control
    *  the sequencing precisely, even when re-searching the same chapter. */
   const loadVerses = async (book: BibleBook, ch: number, preselect?: Set<number> | null) => {
+    const request = ++verseRequest.current
     setSelectedBook(book)
     setChapter(ch)
     setLoadingVerses(true)
-    const rows = await BibleAPI.getVerses(book.id, ch, versionRef.current)
-    setVerses(rows)
-    if (preselect && preselect.size > 0) {
-      setSelectedIds(new Set(rows.filter(r => preselect.has(r.verse)).map(r => r.id)))
-    } else {
+    try {
+      const rows = await BibleAPI.getVerses(book.id, ch)
+      if (request !== verseRequest.current) return
+      setVerses(rows)
+      if (preselect && preselect.size > 0) {
+        setSelectedIds(new Set(rows.filter(r => preselect.has(r.verse)).map(r => r.id)))
+      } else {
+        setSelectedIds(new Set())
+      }
+    } catch {
+      if (request !== verseRequest.current) return
+      setVerses([])
       setSelectedIds(new Set())
+      setPackageError('This Bible chapter could not be loaded.')
+    } finally {
+      if (request === verseRequest.current) setLoadingVerses(false)
     }
-    setLoadingVerses(false)
   }
 
-  // Reload the current chapter when the version changes
-  useEffect(() => {
-    if (!selectedBook || !chapter || !version) return
-    loadVerses(selectedBook, chapter)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version])
+  const handleTranslationChange = async (translationId: string) => {
+    ++libraryRequest.current
+    resetNavigation()
+    setBooks([])
+    setPackageError('')
+    setSwitchingTranslation(true)
+    try {
+      const nextLibrary = await BibleAPI.selectTranslation(translationId)
+      const nextBooks = await BibleAPI.getBooks()
+      setLibrary(nextLibrary)
+      setBooks(nextBooks)
+    } catch {
+      setPackageError('The selected Bible translation could not be opened.')
+      await loadLibrary(true)
+    } finally {
+      setSwitchingTranslation(false)
+    }
+  }
 
   const filteredBooks = useMemo(() => {
     const q = bookQuery.trim().toLowerCase()
@@ -179,6 +228,7 @@ export default function BibleTab() {
       <div className="lib-search-row">
         <input
           className="search-input"
+          aria-label="Bible reference"
           placeholder='e.g. "John 3:16" or "John 3:2,6,11"'
           value={refQuery}
           onChange={(e) => { setRefQuery(e.target.value); setRefError('') }}
@@ -186,13 +236,14 @@ export default function BibleTab() {
         />
         <button className="bible-go-btn" onClick={handleReferenceSearch}>Go</button>
       </div>
-      {refError && <div className="bible-ref-error">{refError}</div>}
-      {packageError && <div className="bible-ref-error">{packageError}</div>}
-      {packageNotice && <div className="bible-package-notice">{packageNotice}</div>}
+      {refError && <div className="bible-ref-error" role="alert">{refError}</div>}
+      {packageError && <div className="bible-ref-error" role="alert">{packageError}</div>}
+      {packageNotice && <div className="bible-package-notice" role="status">{packageNotice}</div>}
 
-      <div className="bible-breadcrumb">
+      <div className="bible-breadcrumb" role="navigation" aria-label="Bible location">
         <button
           className={`bible-crumb ${step === 'books' ? 'active' : ''}`}
+          aria-current={step === 'books' ? 'page' : undefined}
           onClick={() => { setSelectedBook(null); setChapter(null) }}
         >
           Books
@@ -202,6 +253,7 @@ export default function BibleTab() {
             <span className="bible-crumb-sep">›</span>
             <button
               className={`bible-crumb ${step === 'chapters' ? 'active' : ''}`}
+              aria-current={step === 'chapters' ? 'page' : undefined}
               onClick={() => setChapter(null)}
             >
               {selectedBook.name}
@@ -211,18 +263,37 @@ export default function BibleTab() {
         {selectedBook && chapter && (
           <>
             <span className="bible-crumb-sep">›</span>
-            <button className="bible-crumb active">Ch. {chapter}</button>
+            <button className="bible-crumb active" aria-current="page">Ch. {chapter}</button>
           </>
         )}
-        {versions.length > 1 && (
+        {library.translations.length > 1 && (
           <select
             className="bible-version-select"
-            value={version}
-            onChange={(e) => setVersion(e.target.value)}
+            aria-label="Bible version"
+            value={library.activeTranslationId ?? ''}
+            disabled={switchingTranslation}
+            onChange={(e) => { void handleTranslationChange(e.target.value) }}
           >
-            {versions.map((v) => <option key={v} value={v}>{v}</option>)}
+            {library.translations.map((translation) => {
+              const duplicateLabel = library.translations.some(other =>
+                other.id !== translation.id && other.version === translation.version)
+              return (
+                <option key={translation.id} value={translation.id}>
+                  {duplicateLabel
+                    ? `${translation.version} — ${translation.packageName}`
+                    : translation.version}
+                </option>
+              )
+            })}
           </select>
         )}
+        <button
+          className="bible-import-btn"
+          disabled={installingPackage}
+          onClick={handleInstallPackage}
+        >
+          {installingPackage ? 'Importing…' : '+ Import Bible'}
+        </button>
       </div>
 
       {step === 'books' && (
@@ -230,6 +301,7 @@ export default function BibleTab() {
           <div className="lib-search-row">
             <input
               className="search-input"
+              aria-label="Search Bible books"
               placeholder="Search books…"
               value={bookQuery}
               onChange={(e) => setBookQuery(e.target.value)}

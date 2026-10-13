@@ -41,6 +41,35 @@ export interface BibleVerseRow {
   display_verse: string
 }
 
+export interface BibleTranslation {
+  id: string
+  packageId: string
+  packageName: string
+  version: string
+}
+
+export interface BundledBiblePackage {
+  id: string
+  name: string
+  versions: string[]
+}
+
+export interface BibleLibraryState {
+  translations: BibleTranslation[]
+  activeTranslationId: string | null
+  bundledCandidates: BundledBiblePackage[]
+  requiresImport: boolean
+}
+
+export interface BibleInstallResult {
+  installed: boolean
+  canceled: boolean
+  name?: string
+  versions?: string[]
+  activeTranslationId?: string | null
+  error?: string
+}
+
 /** One selected verse, resolved to what actually gets drawn/superscripted. */
 export interface VersePart {
   number: string   // empty for one selected verse; otherwise its display label or plain verse number

@@ -2,7 +2,8 @@
 
 ## 1.2.6 — Bible packages, media speed, reliability, and release hardening
 
-- Makes Bible text a user-installed `.swbible` package instead of bundling a copyrighted translation.
+- Requires an explicit Bible import on first launch, keeps each `.swbible` package separately, and adds a persistent version selector when multiple translations are installed.
+- Adds a validated, opt-in private distribution build for translations with explicit redistribution permission while keeping public builds Bible-free.
 - Adds a validated `.db` to `.swbible` converter without publishing Bible text.
 - Preserves the bundled Bible browser, verse cues, multi-slide song blocks, and app-wide default backgrounds from the 1.2.6 source.
 - Keeps output text and backgrounds synchronized while media loads and falls back to black when media fails.

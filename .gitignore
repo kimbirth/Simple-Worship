@@ -20,7 +20,8 @@ npm-debug.log*
 *.key
 *.pem
 
-# Bible text packages are user-supplied and may be copyrighted
+# Bible text packages are user-supplied and may be copyrighted. This also
+# keeps private distribution-bibles/*.swbible inputs out of public commits.
 bible.db
 *.swbible
 

@@ -13,8 +13,10 @@ import {
 import {
   initBibleDb,
   installBiblePackage,
+  installBundledBiblePackage,
+  getBibleLibraryState,
+  selectBibleTranslation,
   getBibleBooks,
-  getBibleVersions,
   getBibleVerses,
 } from './bibleDb'
 
@@ -378,10 +380,12 @@ ipcMain.handle('songs:insert',    (_e, s)   => insertSong(s))
 ipcMain.handle('songs:update',    (_e, s)   => updateSong(s))
 ipcMain.handle('songs:delete',    (_e, id)  => deleteSong(id))
 
-ipcMain.handle('bible:get-books',    ()                                       => getBibleBooks())
-ipcMain.handle('bible:get-versions', ()                                       => getBibleVersions())
-ipcMain.handle('bible:get-verses',   (_e, bookId: number, chapter: number, version: string) =>
-  getBibleVerses(bookId, chapter, version))
+ipcMain.handle('bible:get-library', () => getBibleLibraryState())
+ipcMain.handle('bible:select-translation', (_e, translationId: string) =>
+  selectBibleTranslation(translationId))
+ipcMain.handle('bible:get-books',  () => getBibleBooks())
+ipcMain.handle('bible:get-verses', (_e, bookId: number, chapter: number) =>
+  getBibleVerses(bookId, chapter))
 ipcMain.handle('bible:install-package', async () => {
   if (!operatorWindow || operatorWindow.isDestroyed()) {
     return { installed: false, canceled: true }
@@ -401,6 +405,17 @@ ipcMain.handle('bible:install-package', async () => {
       installed: false,
       canceled: false,
       error: error instanceof Error ? error.message : 'The Bible package could not be installed.',
+    }
+  }
+})
+ipcMain.handle('bible:install-bundled', async (_e, candidateId: string) => {
+  try {
+    return { ...(await installBundledBiblePackage(candidateId)), canceled: false }
+  } catch (error) {
+    return {
+      installed: false,
+      canceled: false,
+      error: error instanceof Error ? error.message : 'The included Bible package could not be installed.',
     }
   }
 })

@@ -1,0 +1,10 @@
+# Private/licensed distribution overlay. The normal electron-builder.yml and
+# public CI remain Bible-free. Every package is validated before this config is
+# used by the dedicated npm scripts.
+extends: ./electron-builder.yml
+
+extraResources:
+  - from: distribution-bibles
+    to: bibles
+    filter:
+      - "*.swbible"

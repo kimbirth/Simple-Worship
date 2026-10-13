@@ -56,10 +56,12 @@ contextBridge.exposeInMainWorld('api', {
 
   // ── Bible ──
   bible: {
-    getBooks:    ()                                                        => ipcRenderer.invoke('bible:get-books'),
-    getVersions: ()                                                        => ipcRenderer.invoke('bible:get-versions'),
-    getVerses:   (bookId: number, chapter: number, version: string)        => ipcRenderer.invoke('bible:get-verses', bookId, chapter, version),
-    installPackage: ()                                                     => ipcRenderer.invoke('bible:install-package'),
+    getLibrary:       ()                                      => ipcRenderer.invoke('bible:get-library'),
+    selectTranslation: (translationId: string)                => ipcRenderer.invoke('bible:select-translation', translationId),
+    getBooks:         ()                                      => ipcRenderer.invoke('bible:get-books'),
+    getVerses:        (bookId: number, chapter: number)       => ipcRenderer.invoke('bible:get-verses', bookId, chapter),
+    installPackage:   ()                                      => ipcRenderer.invoke('bible:install-package'),
+    installBundled:   (candidateId: string)                   => ipcRenderer.invoke('bible:install-bundled', candidateId),
   },
 
   // ── Media ──

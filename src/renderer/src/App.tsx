@@ -5,6 +5,7 @@ import LeftPanel from './components/layout/LeftPanel'
 import PreviewPanel from './components/layout/PreviewPanel'
 import LivePanel from './components/layout/LivePanel'
 import SettingsModal from './components/layout/SettingsModal'
+import BibleSetupDialog from './components/bible/BibleSetupDialog'
 import { SettingsAPI, MediaAPI } from './utils/api'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePanelResize } from './hooks/usePanelResize'
@@ -201,6 +202,7 @@ function AppInner() {
           onClose={() => setShowSettings(false)}
         />
       )}
+      <BibleSetupDialog />
     </div>
   )
 }

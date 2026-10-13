@@ -10,10 +10,11 @@ const FOCUSABLE = [
 ].join(',')
 
 /** Keep keyboard focus inside a mounted modal and restore it when the modal closes. */
-export function useDialogFocusTrap<T extends HTMLElement>() {
+export function useDialogFocusTrap<T extends HTMLElement>(active = true) {
   const dialogRef = useRef<T>(null)
 
   useEffect(() => {
+    if (!active) return
     const dialog = dialogRef.current
     if (!dialog) return
     const previouslyFocused = document.activeElement instanceof HTMLElement
@@ -57,7 +58,7 @@ export function useDialogFocusTrap<T extends HTMLElement>() {
       dialog.removeEventListener('keydown', trapTab)
       if (previouslyFocused?.isConnected) previouslyFocused.focus()
     }
-  }, [])
+  }, [active])
 
   return dialogRef
 }

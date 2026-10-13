@@ -5,7 +5,7 @@ A desktop worship presentation app for church services, built with Electron, Rea
 ## Features
 
 - Song database with simple `[Block]` lyric formatting
-- Optional Bible-package lookup with book, chapter, verse-range, and quick-reference search
+- Required first-run Bible import with multiple installed translations, a version selector, verse ranges, and quick-reference search
 - App-wide default backgrounds for songs and Bible verses
 - Staging-to-live workflow with independent Black, Clear, and Logo overlays
 - Smooth looping image/video backgrounds with crossfade transitions
@@ -82,9 +82,9 @@ Black, Clear, and Logo are independent output layers. Going live changes the cue
 
 ## First-run setup
 
-1. Open Settings and select the projector under Output Screen.
-2. Select the folder containing background images and videos.
-3. If required, open Bible and install a lawfully obtained `.swbible` package.
+1. Import at least one lawfully obtained `.swbible` package in the required setup dialog.
+2. Open Settings and select the projector under Output Screen.
+3. Select the folder containing background images and videos.
 4. Choose the default song/Bible background and logo from the indexed media.
 5. Use Settings → Data Backup & Recovery to create a portable backup after entering the song library.
 
@@ -109,10 +109,13 @@ Lyrics default to bold 90 px and shrink only when necessary to fit the output fr
 ## Bible packages
 
 Bible translations are often copyrighted, so the open-source project and its
-official installers do not include Bible text. From the Bible tab, choose
-**Install .swbible package** to install a package you are legally permitted to
-use. Packages are validated and stored only in the current user's app-data
-folder.
+normal public installers do not include Bible text. On first launch,
+SimpleWorship requires a valid `.swbible` package before continuing. From the
+Bible tab, choose **Import Bible** at any time to add another package. Every
+package is validated and copied separately into the current user's app-data
+folder, so importing NIV does not replace RTPV05. When more than one
+translation is installed, the Bible tab shows a version selector and remembers
+the selected translation across restarts.
 
 Maintainers who have a compatible, lawfully obtained SQLite Bible database can
 create a package without modifying the source database:
@@ -125,6 +128,28 @@ The converter verifies the schema, records, internal package identifier, and
 completed output. It refuses to overwrite an existing package unless `--force`
 is supplied. Bible database and `.swbible` files are intentionally excluded
 from source control.
+
+### Optional licensed distribution
+
+If you have explicit permission to redistribute a translation, place its
+`.swbible` file in the local `distribution-bibles` folder and run:
+
+```bash
+npm run bible:validate-distribution
+npm run build:win:unsigned:with-bibles
+```
+
+The dedicated build includes those validated files as first-run import choices.
+The normal build and public CI remain Bible-free, and `.swbible` files in that
+folder are ignored by Git. For a signed private build using your own Windows
+certificate, use `npm run build:win:with-bibles`.
+
+Permission to possess or use a Bible translation is not automatically
+permission to redistribute it. In particular, do not place NIV, RTPV05, or any
+other copyrighted text in a public release until the copyright owner has
+granted the necessary distribution rights. A private Bible-containing build
+also should not be submitted to SignPath Foundation unless SignPath confirms it
+meets the Foundation program's eligibility rules.
 
 ## Build an installer
 
@@ -171,7 +196,8 @@ src/
   main/
     index.ts          Electron windows, dialogs, media checks, and IPC
     db.ts             Songs, settings, media index, backup, and recovery
-    bibleDb.ts        Validation and read-only access to user-installed Bible packages
+    bibleDb.ts        Multi-package Bible library, validation, selection, and queries
+    bibleLibraryIdentity.ts  Stable package/storage/translation identities
     mediaServer.ts    Restricted local media streaming
   preload/
     index.ts          Operator IPC bridge
@@ -181,7 +207,7 @@ src/
     output.tsx
     store/AppStore.tsx
     components/
-      bible/BibleTab.tsx
+      bible/BibleTab.tsx and BibleSetupDialog.tsx
       editor/SongEditorModal.tsx
       layout/
       media/MediaGrid.tsx

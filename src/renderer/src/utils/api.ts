@@ -8,6 +8,8 @@
 import type {
   BackupStatus,
   BibleBook,
+  BibleInstallResult,
+  BibleLibraryState,
   BibleVerseRow,
   Cue,
   MediaItem,
@@ -37,18 +39,35 @@ export const SongsAPI = {
 
 // ─── Bible ────────────────────────────────────────────────────────────────────
 
+const emptyBibleLibrary = (): BibleLibraryState => ({
+  translations: [],
+  activeTranslationId: null,
+  bundledCandidates: [],
+  requiresImport: true,
+})
+
+function announceBibleChange(state?: BibleLibraryState) {
+  window.dispatchEvent(new CustomEvent('simpleworship:bible-changed', { detail: state }))
+}
+
 export const BibleAPI = {
-  getBooks:    async (): Promise<BibleBook[]> => api().bible?.getBooks() ?? [],
-  getVersions: async (): Promise<string[]>    => api().bible?.getVersions() ?? [],
-  getVerses:   async (bookId: number, chapter: number, version: string): Promise<BibleVerseRow[]> =>
-    api().bible?.getVerses(bookId, chapter, version) ?? [],
-  installPackage: async (): Promise<{
-    installed: boolean
-    canceled: boolean
-    name?: string
-    versions?: string[]
-    error?: string
-  }> => api().bible?.installPackage() ?? { installed: false, canceled: true },
+  getLibrary: async (): Promise<BibleLibraryState> =>
+    await api().bible?.getLibrary() ?? emptyBibleLibrary(),
+  selectTranslation: async (translationId: string): Promise<BibleLibraryState> =>
+    await api().bible?.selectTranslation(translationId) ?? emptyBibleLibrary(),
+  getBooks:  async (): Promise<BibleBook[]> => api().bible?.getBooks() ?? [],
+  getVerses: async (bookId: number, chapter: number): Promise<BibleVerseRow[]> =>
+    api().bible?.getVerses(bookId, chapter) ?? [],
+  installPackage: async (): Promise<BibleInstallResult> => {
+    const result = await api().bible?.installPackage() ?? { installed: false, canceled: true }
+    if (result.installed) announceBibleChange()
+    return result
+  },
+  installBundled: async (candidateId: string): Promise<BibleInstallResult> => {
+    const result = await api().bible?.installBundled(candidateId) ?? { installed: false, canceled: false }
+    if (result.installed) announceBibleChange()
+    return result
+  },
 }
 
 // ─── Media ────────────────────────────────────────────────────────────────────

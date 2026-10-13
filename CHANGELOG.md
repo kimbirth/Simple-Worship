@@ -1,15 +1,9 @@
 # Changelog
 
-## Unreleased — Open-source and SignPath preparation
+## 1.2.6 — Bible packages, media speed, reliability, and release hardening
 
 - Makes Bible text a user-installed `.swbible` package instead of bundling a copyrighted translation.
 - Adds a validated `.db` to `.swbible` converter without publishing Bible text.
-- Adds privacy, security, contribution, and SignPath code-signing policy documentation.
-- Adds GitHub verification and unsigned signing-input workflows for reproducible Windows builds.
-- Removes the internal self-signed-certificate workflow from the public source distribution.
-
-## 1.2.6 — Bible backgrounds, reliability, and release hardening
-
 - Preserves the bundled Bible browser, verse cues, multi-slide song blocks, and app-wide default backgrounds from the 1.2.6 source.
 - Keeps output text and backgrounds synchronized while media loads and falls back to black when media fails.
 - Supports image/background cues consistently across Media, schedules, persistence, validation, preview, and live output.
@@ -20,6 +14,9 @@
 - Adds keyboard and focus affordances across cards, dialogs, tabs, window controls, and resizable panel separators.
 - Validates and migrates backup schemas, deduplicates automatic backups, and repairs macOS reopen behavior.
 - Adds lint/type/test/build/audit gates, CI verification, signed-release enforcement, and an explicit unsigned rehearsal path.
+- Adds privacy, security, contribution, and SignPath code-signing policy documentation.
+- Adds GitHub verification and unsigned signing-input workflows for reproducible Windows builds.
+- Removes the internal self-signed-certificate workflow from the public source distribution.
 - Updates Electron to 44.5.0 and sql.js to 1.14.2 while excluding unused sql.js builds from packages.
 
 ## 1.0.1 — Single-source app logo

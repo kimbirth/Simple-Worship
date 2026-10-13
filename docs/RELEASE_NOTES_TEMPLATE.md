@@ -2,6 +2,11 @@
 
 Describe the user-visible changes and link to the corresponding changelog.
 
+For a source-only release made while the SignPath Foundation application is in
+progress, state that no unsigned binaries are attached and remove the
+verification values below. Attach a Windows installer only after SignPath has
+signed it and the Authenticode check has passed.
+
 ## Code signing policy
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate

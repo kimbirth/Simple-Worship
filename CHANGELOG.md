@@ -6,6 +6,7 @@
 - Adds a validated, opt-in private distribution build for translations with explicit redistribution permission while keeping public builds Bible-free.
 - Adds a validated `.db` to `.swbible` converter without publishing Bible text.
 - Preserves the bundled Bible browser, verse cues, multi-slide song blocks, and app-wide default backgrounds from the 1.2.6 source.
+- Selecting two Bible verse endpoints now includes every intervening verse in the staged and scheduled cue.
 - Keeps output text and backgrounds synchronized while media loads and falls back to black when media fails.
 - Supports image/background cues consistently across Media, schedules, persistence, validation, preview, and live output.
 - Persists schedule edits immediately with crash-safe local recovery while preserving intentional backup restores.

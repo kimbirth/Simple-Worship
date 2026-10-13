@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../../store/AppStore'
 import { BibleAPI } from '../../utils/api'
-import { buildReference, buildVerseParts, parseVerseReference } from '../../utils/verseFormat'
+import {
+  buildReference,
+  buildVerseParts,
+  matchingVerseIds,
+  parseVerseReference,
+  updateVerseSelection,
+} from '../../utils/verseFormat'
 import type { BibleBook, BibleLibraryState, BibleVerseRow, VerseCue } from '../../types'
 
 type Step = 'books' | 'chapters' | 'verses'
@@ -102,13 +108,15 @@ export default function BibleTab() {
     const request = ++verseRequest.current
     setSelectedBook(book)
     setChapter(ch)
+    setVerses([])
+    setSelectedIds(new Set())
     setLoadingVerses(true)
     try {
       const rows = await BibleAPI.getVerses(book.id, ch)
       if (request !== verseRequest.current) return
       setVerses(rows)
       if (preselect && preselect.size > 0) {
-        setSelectedIds(new Set(rows.filter(r => preselect.has(r.verse)).map(r => r.id)))
+        setSelectedIds(matchingVerseIds(rows, preselect))
       } else {
         setSelectedIds(new Set())
       }
@@ -168,12 +176,7 @@ export default function BibleTab() {
   }, [selectedBook, chapter, version, selectedRows])
 
   const toggleVerse = (id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    setSelectedIds(prev => updateVerseSelection(verses, prev, id))
   }
 
   const buildCue = useCallback((): VerseCue | null => {

@@ -12,16 +12,28 @@ export function verseBounds(row: BibleVerseRow): [number, number] {
   return [row.verse, row.verse]
 }
 
-/** Build the citation range for a set of selected verse rows. Multiple
- *  selected verses always compress to "first-last" (e.g. picking 2, 6, 11
- *  shows "2-11", not "2-6-11") — never a list of every number picked. */
+/** Build a compact, accurate citation for selected rows. Adjacent verses are
+ *  collapsed to ranges while intentional gaps remain comma-separated. */
 export function compressedVerseRange(rows: BibleVerseRow[]): string {
   if (rows.length === 0) return ''
-  if (rows.length === 1) return rows[0].display_verse || String(rows[0].verse)
-  const bounds = rows.map(verseBounds)
-  const min = Math.min(...bounds.map(b => b[0]))
-  const max = Math.max(...bounds.map(b => b[1]))
-  return min === max ? String(min) : `${min}-${max}`
+  const bounds = rows
+    .map(verseBounds)
+    .map(([start, end]) => [Math.min(start, end), Math.max(start, end)] as [number, number])
+    .sort((left, right) => left[0] - right[0] || left[1] - right[1])
+
+  const ranges: Array<[number, number]> = []
+  for (const [start, end] of bounds) {
+    const previous = ranges[ranges.length - 1]
+    if (previous && start <= previous[1] + 1) {
+      previous[1] = Math.max(previous[1], end)
+    } else {
+      ranges.push([start, end])
+    }
+  }
+
+  return ranges
+    .map(([start, end]) => start === end ? String(start) : `${start}-${end}`)
+    .join(',')
 }
 
 /** Full citation line: "Book Chapter:Range VERSION" */
@@ -39,6 +51,52 @@ export function buildVerseParts(rows: BibleVerseRow[]): VersePart[] {
     number: showNumbers ? row.display_verse || String(row.verse) : '',
     text: row.text.trim(),
   }))
+}
+
+/** Update checkbox selection using the visible chapter order. Selecting an
+ *  unchecked verse fills every row between it and the current selection, so
+ *  choosing verse 1 and then verse 4 includes verses 1, 2, 3, and 4. Clicking
+ *  an already selected verse retains the existing toggle-off behavior. */
+export function updateVerseSelection(
+  rows: BibleVerseRow[],
+  previousIds: ReadonlySet<number>,
+  clickedId: number,
+): Set<number> {
+  const clickedIndex = rows.findIndex(row => row.id === clickedId)
+  if (clickedIndex === -1) return new Set(previousIds)
+
+  if (previousIds.has(clickedId)) {
+    const next = new Set(previousIds)
+    next.delete(clickedId)
+    return next
+  }
+
+  const selectedIndexes = rows
+    .map((row, index) => previousIds.has(row.id) ? index : -1)
+    .filter(index => index >= 0)
+
+  if (selectedIndexes.length === 0) return new Set([clickedId])
+
+  const first = Math.min(clickedIndex, ...selectedIndexes)
+  const last = Math.max(clickedIndex, ...selectedIndexes)
+  return new Set(rows.slice(first, last + 1).map(row => row.id))
+}
+
+/** Resolve searched verse numbers to visible rows, including merged rows such
+ *  as display_verse "5-8" when any requested number falls within that row. */
+export function matchingVerseIds(
+  rows: BibleVerseRow[],
+  verseNumbers: ReadonlySet<number>,
+): Set<number> {
+  return new Set(rows
+    .filter(row => {
+      const [start, end] = verseBounds(row)
+      for (const number of verseNumbers) {
+        if (number >= Math.min(start, end) && number <= Math.max(start, end)) return true
+      }
+      return false
+    })
+    .map(row => row.id))
 }
 
 // ─── Reference search ("<book> <chapter>:<verse/verses>") ─────────────────────
